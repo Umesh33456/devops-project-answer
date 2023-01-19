@@ -1,24 +1,40 @@
 pipeline {
+    environment { 
+        registry = "umesh33456" 
+        registryCredential = 'docker-hub' 
+        dockerImage = '' 
+    }
     agent any
-    
+
     stages {
-        stage('Build image') {
+        
+        stage('Build Image') {
             steps {
-                echo 'Building docker image'
+                echo 'Building Docker Image'
                 script {
                     dockerImage = docker.build registry + ":$BUILD_NUMBER"
                 }
             }
         }
-        stage('Test') {
+        
+        stage('Deploy Image') {
             steps {
-                echo 'Testing..'
+                echo 'Pushing Docker Image'
+                script {
+                   docker.withRegistry( '', registryCredential ) {
+                   dockerImage.push("$BUILD_NUMBER")
+                   dockerImage.push('latest')
+                  }
+                }
             }
         }
-        stage('Deploy') {
+        
+        stage('Clean Up') {
             steps {
-                echo 'Deploying....'
+                sh "docker rmi $registry:$BUILD_NUMBER"
+                sh "docker rmi $registry:latest"
             }
         }
     }
 }
+
